@@ -10,7 +10,7 @@ from matplotlib.colors import ListedColormap, BoundaryNorm
 
 #st.set_page_config(layout="wide")
 
-def fargeplot(df, farger='Snøskred'):
+def fargeplot(df, farger='Snøskred', aspect=1):
     #xy = (np.random.random((1000, 2)) - 0.5).cumsum(axis=0)
     xy = df[['M', 'Z']].to_numpy()
 
@@ -96,7 +96,7 @@ def fargeplot(df, farger='Snøskred'):
     ax.legend(handles=legend_elements)
     ax.set_ylabel('Høyde (moh.)')
     ax.set_xlabel('Lengde (m)')
-    ax.set_aspect('equal', 'box')
+    ax.set_aspect(aspect, 'box')
     st.pyplot(fig)
     return
 
@@ -124,11 +124,12 @@ if uploaded_file is not None:
     farge = st.radio(
      "Kva fargar skal vises?",
      ('Snøskred', 'Jordskred', 'Stabilitet'))
+    aspect = st.slider('Kva vertikalskala vil du ha??', 0.5, 5, 1)
     check = st.checkbox("Jamn ut profil")
     if check:
         utjamn = st.slider('Kva oppløysing ynskjer du?', 1, 100, 10)
         df_plot = terrengprofil(df, True, utjamn)
-        fargeplot(df_plot, farge)
+        fargeplot(df_plot, farge, aspect)
     else:
         df_plot = terrengprofil(df)
-        fargeplot(df_plot, farge)
+        fargeplot(df_plot, farge, aspect)
