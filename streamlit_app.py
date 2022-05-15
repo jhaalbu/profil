@@ -92,6 +92,8 @@ def fargeplot(df, farger='Snøskred'):
     ax.autoscale_view()
     ax.grid(linestyle = '--', linewidth = 0.5)
     ax.legend(handles=legend_elements)
+    ax.set_ylabel('Høyde (moh.)')
+    ax.set_xlabel('Lengde (m)')
     ax.set_aspect('equal', 'box')
     st.pyplot(fig)
     return
