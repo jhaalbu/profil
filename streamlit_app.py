@@ -7,8 +7,11 @@ from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 from matplotlib.collections import LineCollection
 from matplotlib.colors import ListedColormap, BoundaryNorm
+import matplotlib.image as image
 
 #st.set_page_config(layout="wide")
+with open('logo (Phone).png', 'rb') as file:
+    img = image.imread(file)
 
 def fargeplot(df, farger='Snøskred', aspect=1):
     #xy = (np.random.random((1000, 2)) - 0.5).cumsum(axis=0)
@@ -97,6 +100,7 @@ def fargeplot(df, farger='Snøskred', aspect=1):
     ax.set_ylabel('Høyde (moh.)')
     ax.set_xlabel('Lengde (m)')
     ax.set_aspect(aspect, 'box')
+    fig.figimage(img, 100, 50, alpha=0.25)
     st.pyplot(fig)
     return
 
