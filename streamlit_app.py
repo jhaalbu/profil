@@ -124,7 +124,7 @@ if uploaded_file is not None:
     farge = st.radio(
      "Kva fargar skal vises?",
      ('Snøskred', 'Jordskred', 'Stabilitet'))
-    aspect = st.slider('Kva vertikalskala vil du ha??', 0.5, 5, 1)
+    aspect = st.slider('Kva vertikalskala vil du ha??', 0.5, 5.0, 1.0)
     check = st.checkbox("Jamn ut profil")
     if check:
         utjamn = st.slider('Kva oppløysing ynskjer du?', 1, 100, 10)
