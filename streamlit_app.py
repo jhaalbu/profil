@@ -13,7 +13,7 @@ import matplotlib.image as image
 with open('logo (Phone).png', 'rb') as file:
     img = image.imread(file)
 
-def fargeplot(df, farger='Snøskred', aspect=1):
+def fargeplot(df, farger='Snøskred', aspect=1, tiltak=False, tiltak_plassering=None):
     #xy = (np.random.random((1000, 2)) - 0.5).cumsum(axis=0)
     xy = df[['M', 'Z']].to_numpy()
 
@@ -61,30 +61,26 @@ def fargeplot(df, farger='Snøskred', aspect=1):
                 markerfacecolor='darkred', markersize=15),
         ]
     if farger == 'Stabilitet':
-        cmap = ListedColormap(['blue','palegreen' , 'green', 'greenyellow','yellow', 'orange', 'orangered', 'red', 'darkred', 'black']) #8
-        norm = BoundaryNorm([0, 2.9, 3.8, 5.7, 14, 26.6, 33.7, 45, 63.4, 71.6, 90], cmap.N) #10
+        cmap = ListedColormap(['blue','aquamarine' , 'lime', 'green','yellow', 'orange', 'orangered', 'red', 'black']) #8
+        norm = BoundaryNorm([0, 2.9, 3.8, 5.7, 14, 26.6, 33.7, 45, 63.4, 90], cmap.N) #10
         #1:20, 1:15, 1:10, 1:4, 1:2, 1:1,5, 1:1, 2:1, 3:1 100:1
         legend_elements = [
         Line2D([0], [0], marker='o', color='w', label='< 1:20',
                 markerfacecolor='blue', markersize=15),
             Line2D([0], [0], marker='o', color='w', label='1:20 - 1:15',
-                markerfacecolor='palegreen', markersize=15),
+                markerfacecolor='aquamarine', markersize=15),
             Line2D([0], [0], marker='o', color='w', label='1:15 - 1:10',
-                markerfacecolor='green', markersize=15),
+                markerfacecolor='lime', markersize=15),
             Line2D([0], [0], marker='o', color='w', label='1:10 - 1:4',
-                markerfacecolor='greenyellow', markersize=15),
+                markerfacecolor='green', markersize=15),
             Line2D([0], [0], marker='o', color='w', label='1:4 - 1:2',
                 markerfacecolor='yellow', markersize=15),
             Line2D([0], [0], marker='o', color='w', label='1:2 - 1:1.5',
                 markerfacecolor='orange', markersize=15),
             Line2D([0], [0], marker='o', color='w', label='1:1.5 - 1:1',
                 markerfacecolor='orangered', markersize=15),
-            Line2D([0], [0], marker='o', color='w', label='1:1 - 2:1',
-                markerfacecolor='red', markersize=15),
-            Line2D([0], [0], marker='o', color='w', label='2:1 -  3:1',
-                markerfacecolor='darkred', markersize=15),
-            Line2D([0], [0], marker='o', color='w', label='> 3:1',
-                markerfacecolor='black', markersize=15)
+            Line2D([0], [0], marker='o', color='w', label='> 1:1',
+                markerfacecolor='red', markersize=15)
         ]
 
     fig, ax = plt.subplots(figsize=(15,10))
@@ -92,7 +88,7 @@ def fargeplot(df, farger='Snøskred', aspect=1):
     #coll = LineCollection(segments, cmap=plt.cm.gist_ncar)
     coll.set_array(df.Vinkel)
     coll.set_linewidth(3)
-
+    
     ax.add_collection(coll)
     ax.autoscale_view()
     ax.grid(linestyle = '--', linewidth = 0.5)
@@ -119,21 +115,28 @@ def terrengprofil(df, utjamning=False, opplosning=None):
     df['Vinkel'] = abs(np.degrees(np.arctan(df['Helning'])))
     return df
 
+st.header('Profilverktøy')
+st.write('Leser csv filer fra profilverktøyet på Høydedata.no')
+
 uploaded_file = st.file_uploader("Choose a file")
 
 if uploaded_file is not None:
 
      # Can be used wherever a "file-like" object is accepted:
     df = pd.read_csv(uploaded_file, sep=';')
-    farge = st.radio(
+    farge = st.sidebar.radio(
      "Kva fargar skal vises?",
      ('Snøskred', 'Jordskred', 'Stabilitet'))
-    aspect = st.slider('Kva vertikalskala vil du ha??', 0.5, 5.0, 1.0)
-    check = st.checkbox("Jamn ut profil")
+    aspect = st.sidebar.slider('Kva vertikalskala vil du ha??', 1, 5, 1)
+    check = st.sidebar.checkbox("Jamn ut profil")
     if check:
-        utjamn = st.slider('Kva oppløysing ynskjer du?', 1, 100, 10)
+        utjamn = st.sidebar.slider('Kva oppløysing ynskjer du?', 1, 100, 10)
         df_plot = terrengprofil(df, True, utjamn)
         fargeplot(df_plot, farge, aspect)
     else:
         df_plot = terrengprofil(df)
         fargeplot(df_plot, farge, aspect)
+
+
+
+#TODO: 1:15 linje, mot venstre høgre, plassering, justering z.
