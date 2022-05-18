@@ -9,11 +9,13 @@ from matplotlib.collections import LineCollection
 from matplotlib.colors import ListedColormap, BoundaryNorm
 import matplotlib.image as image
 
+st.set_page_config(layout="wide")
+
 #st.set_page_config(layout="wide")
 with open('logo (Phone).png', 'rb') as file:
     img = image.imread(file)
 
-def fargeplot(df, farger='Snøskred', aspect=1, tiltak=False, tiltak_plassering=None):
+def fargeplot(df, rutenettx, rutenetty, farger='Snøskred', aspect=1, tiltak=False, tiltak_plassering=None):
     #xy = (np.random.random((1000, 2)) - 0.5).cumsum(axis=0)
     xy = df[['M', 'Z']].to_numpy()
 
@@ -26,38 +28,38 @@ def fargeplot(df, farger='Snøskred', aspect=1, tiltak=False, tiltak_plassering=
         cmap = ListedColormap(['grey', 'green', 'yellow', 'orange', 'orangered', 'red', 'darkred'])
         norm = BoundaryNorm([0, 27, 30, 35, 40, 45, 50, 90], cmap.N)
         legend_elements = [
-                Line2D([0], [0], marker='o', color='w', label='0 - 27',
+                Line2D([0], [0], marker='o', color='w', label='0 - 27\N{DEGREE SIGN}',
                         markerfacecolor='grey', markersize=15),
-                    Line2D([0], [0], marker='o', color='w', label='27-30',
+                    Line2D([0], [0], marker='o', color='w', label='27-30\N{DEGREE SIGN}',
                         markerfacecolor='green', markersize=15),
-                    Line2D([0], [0], marker='o', color='w', label='30-35',
+                    Line2D([0], [0], marker='o', color='w', label='30-35\N{DEGREE SIGN}',
                         markerfacecolor='yellow', markersize=15),
-                    Line2D([0], [0], marker='o', color='w', label='35-40',
+                    Line2D([0], [0], marker='o', color='w', label='35-40\N{DEGREE SIGN}',
                         markerfacecolor='orange', markersize=15),
-                    Line2D([0], [0], marker='o', color='w', label='40-45',
+                    Line2D([0], [0], marker='o', color='w', label='40-45\N{DEGREE SIGN}',
                         markerfacecolor='orangered', markersize=15),
-                    Line2D([0], [0], marker='o', color='w', label='45-50',
+                    Line2D([0], [0], marker='o', color='w', label='45-50\N{DEGREE SIGN}',
                         markerfacecolor='darkred', markersize=15),
-                    Line2D([0], [0], marker='o', color='w', label='50-90',
+                    Line2D([0], [0], marker='o', color='w', label='50-90\N{DEGREE SIGN}',
                         markerfacecolor='black', markersize=15),
         ]
     if farger == 'Jordskred':
         cmap = ListedColormap(['grey', 'palegreen', 'green', 'greenyellow', 'orange', 'orangered', 'darkred'])
         norm = BoundaryNorm([0, 3, 10, 15, 25, 45, 50, 90], cmap.N)
         legend_elements = [
-        Line2D([0], [0], marker='o', color='w', label='0 - 3',
+        Line2D([0], [0], marker='o', color='w', label='0 - 3\N{DEGREE SIGN}',
                 markerfacecolor='grey', markersize=15),
-            Line2D([0], [0], marker='o', color='w', label='3-10',
+            Line2D([0], [0], marker='o', color='w', label='3-10\N{DEGREE SIGN}',
                 markerfacecolor='palegreen', markersize=15),
-            Line2D([0], [0], marker='o', color='w', label='10-15',
+            Line2D([0], [0], marker='o', color='w', label='10-15\N{DEGREE SIGN}',
                 markerfacecolor='green', markersize=15),
-            Line2D([0], [0], marker='o', color='w', label='15-25',
+            Line2D([0], [0], marker='o', color='w', label='15-25\N{DEGREE SIGN}',
                 markerfacecolor='greenyellow', markersize=15),
-            Line2D([0], [0], marker='o', color='w', label='25-45',
+            Line2D([0], [0], marker='o', color='w', label='25-45\N{DEGREE SIGN}',
                 markerfacecolor='orange', markersize=15),
-            Line2D([0], [0], marker='o', color='w', label='45-50',
+            Line2D([0], [0], marker='o', color='w', label='45-50\N{DEGREE SIGN}',
                 markerfacecolor='orangered', markersize=15),
-            Line2D([0], [0], marker='o', color='w', label='50-90',
+            Line2D([0], [0], marker='o', color='w', label='50-90\N{DEGREE SIGN}',
                 markerfacecolor='darkred', markersize=15),
         ]
     if farger == 'Stabilitet':
@@ -91,8 +93,12 @@ def fargeplot(df, farger='Snøskred', aspect=1, tiltak=False, tiltak_plassering=
     
     ax.add_collection(coll)
     ax.autoscale_view()
+    #ticky_space = round(df['Z'].max()/10, -1)
+    #tickx_space = round(df['M'].max()/10, -1)
+    ax.set_yticks(np.arange(0,df['Z'].max(),rutenetty))
+    ax.set_xticks(np.arange(0,df['M'].max(),rutenettx))
     ax.grid(linestyle = '--', linewidth = 0.5)
-    ax.legend(handles=legend_elements)
+    ax.legend(handles=legend_elements, loc='best', title='Helling')
     ax.set_ylabel('Høyde (moh.)')
     ax.set_xlabel('Lengde (m)')
     ax.set_aspect(aspect, 'box')
@@ -132,10 +138,22 @@ if uploaded_file is not None:
     if check:
         utjamn = st.sidebar.slider('Kva oppløysing ynskjer du?', 1, 100, 10)
         df_plot = terrengprofil(df, True, utjamn)
-        fargeplot(df_plot, farge, aspect)
+        ticky_space = round(df_plot['Z'].max()/10, -1)
+        tickx_space = round(df_plot['M'].max()/10, -1)
+        rutenetty = st.sidebar.slider('Avstand rutenett y', 10, 200, int(ticky_space), 10)
+        rutenettx = st.sidebar.slider('Avstand rutenett y', 10, 200, int(tickx_space), 10)
+        fargeplot(df_plot, rutenettx, rutenetty, farge, aspect)
+
     else:
         df_plot = terrengprofil(df)
-        fargeplot(df_plot, farge, aspect)
+        ticky_space = int(round(df_plot['Z'].max()/10, -1))
+        print(ticky_space)
+        tickx_space = int(round(df_plot['M'].max()/10, -1))
+        print(tickx_space)
+        rutenetty = st.sidebar.slider('Avstand rutenett y', 10, 200, ticky_space, 10)
+        rutenettx = st.sidebar.slider('Avstand rutenett y', 10, 200, tickx_space, 10)
+        fargeplot(df_plot, rutenettx, rutenetty, farge, aspect)
+        
 
 
 
