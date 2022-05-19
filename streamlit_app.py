@@ -15,14 +15,16 @@ st.set_page_config(layout="wide")
 with open('logo (Phone).png', 'rb') as file:
     img = image.imread(file)
 
-def fargeplot(df, rutenettx, rutenetty, farger='Snøskred', aspect=1, tiltak=False, tiltak_plassering=None):
+def fargeplot(df, rutenettx, rutenetty, farger='Snøskred', aspect=1, tiltak=False, tiltak_plassering=0, femtenlinje=False, meterverdi=0, retning='Mot venstre', justering=0, legend=True):
     #xy = (np.random.random((1000, 2)) - 0.5).cumsum(axis=0)
     xy = df[['M', 'Z']].to_numpy()
-
+    #print(df)
     # Reshape things so that we have a sequence of:
     # [[(x0,y0),(x1,y1)],[(x0,y0),(x1,y1)],...]
     xy = xy.reshape(-1, 1, 2)
     segments = np.hstack([xy[:-1], xy[1:]])
+    femten = ein_paa_femten(df, meterverdi, retning, justering)
+    tiltak_punkt = vis_tiltak(df, tiltak_plassering)
 
     if farger == 'Snøskred':
         cmap = ListedColormap(['grey', 'green', 'yellow', 'orange', 'orangered', 'red', 'darkred'])
@@ -90,23 +92,54 @@ def fargeplot(df, rutenettx, rutenetty, farger='Snøskred', aspect=1, tiltak=Fal
     #coll = LineCollection(segments, cmap=plt.cm.gist_ncar)
     coll.set_array(df.Vinkel)
     coll.set_linewidth(3)
-    
+    fig.figimage(img, 100, 50, alpha=0.25)
     ax.add_collection(coll)
     ax.autoscale_view()
+
     #ticky_space = round(df['Z'].max()/10, -1)
     #tickx_space = round(df['M'].max()/10, -1)
     ax.set_yticks(np.arange(0,df['Z'].max(),rutenetty))
     ax.set_xticks(np.arange(0,df['M'].max(),rutenettx))
     ax.grid(linestyle = '--', linewidth = 0.5)
-    ax.legend(handles=legend_elements, loc='best', title='Helling')
+    if legend:
+        ax.legend(handles=legend_elements, title='Helling')
     ax.set_ylabel('Høyde (moh.)')
     ax.set_xlabel('Lengde (m)')
     ax.set_aspect(aspect, 'box')
-    fig.figimage(img, 100, 50, alpha=0.25)
+    ax.set_ylim(df['Z'].min() - 20, df['Z'].max() + 20)
+    if tiltak:
+        ax.scatter(tiltak_punkt[0], tiltak_punkt[1], marker='x', s=200, color='black', linewidths=3, zorder=10)
+        #sirkel = plt.Circle((tiltak_punkt[0], tiltak_punkt[1]), 0.1)
+        #ax.add_artist( sirkel )
+    if femtenlinje:
+        ax.plot(femten[0], femten[1], color='green')
     st.pyplot(fig)
     return
 
+def vis_tiltak(df, meterverdi):
+    radnr = df['M'].sub(meterverdi).abs().idxmin()
+    M = float(df.iloc[radnr]['M'])
+    Z = float(df.iloc[radnr]['Z'])
+    return M, Z
 
+
+def ein_paa_femten(df, meterverdi, retning='Mot venstre', justering=0):
+    radnr = df['M'].sub(meterverdi).abs().idxmin()
+    M = float(df.iloc[radnr]['M'])
+    Z = float(df.iloc[radnr]['Z']) - justering
+    M_max = float(df['M'].max())
+    liste_x = []
+    liste_y = []
+    liste_x.append(M)
+    liste_y.append(Z)
+    if retning == 'Mot venstre':
+        liste_x.append(0)
+        liste_y.append(Z + M*(1/15))
+    if retning == 'Mot høgre':
+        liste_x.append(M_max)
+        liste_y.append(Z + (M_max-M)*(1/15))
+    
+    return liste_x, liste_y
  
 def terrengprofil(df, utjamning=False, opplosning=None):
     if utjamning == True:
@@ -125,7 +158,12 @@ st.header('Profilverktøy')
 st.write('Leser csv filer fra profilverktøyet på Høydedata.no')
 
 uploaded_file = st.file_uploader("Choose a file")
-
+tiltak = False
+tiltak_plassering = 0
+meterverdi = 0
+retning = "Mot høgre"
+justering = 0
+femtenlinje = False
 if uploaded_file is not None:
 
      # Can be used wherever a "file-like" object is accepted:
@@ -134,27 +172,34 @@ if uploaded_file is not None:
      "Kva fargar skal vises?",
      ('Snøskred', 'Jordskred', 'Stabilitet'))
     aspect = st.sidebar.slider('Kva vertikalskala vil du ha??', 1, 5, 1)
+    ticky_space = round(df['Z'].max()/10, -1)
+    tickx_space = round(df['M'].max()/10, -1)
+    rutenetty = st.sidebar.slider('Avstand rutenett y', 10, 200, int(ticky_space), 10)
+    rutenettx = st.sidebar.slider('Avstand rutenett y', 10, 200, int(tickx_space), 10)
+    if farge == 'Stabilitet':
+        femtenlinje = st.sidebar.checkbox("Vis linje for potensielt løsneområde")
+        if femtenlinje:
+            meterverdi = st.sidebar.number_input("Gi plassering av linje", 0)
+            
+            if meterverdi > float(df['M'].max()):
+                meterverdi == df['M'].max() - 100
+                
+            justering = st.sidebar.number_input("Gi justering for line (0.25 x H)", 0)
+            retning = st.sidebar.radio('Kva retning skal linje plottes?', ("Mot høgre", "Mot venstre"))
+    tiltak = st.sidebar.checkbox("Vis tiltak")
+    if tiltak:
+        tiltak_plassering = st.sidebar.number_input("Gi plassering for tiltak", 0)
     check = st.sidebar.checkbox("Jamn ut profil")
+    tegnforklaring = st.sidebar.checkbox("Vis tegnforklaring", True)
     if check:
         utjamn = st.sidebar.slider('Kva oppløysing ynskjer du?', 1, 100, 10)
         df_plot = terrengprofil(df, True, utjamn)
-        ticky_space = round(df_plot['Z'].max()/10, -1)
-        tickx_space = round(df_plot['M'].max()/10, -1)
-        rutenetty = st.sidebar.slider('Avstand rutenett y', 10, 200, int(ticky_space), 10)
-        rutenettx = st.sidebar.slider('Avstand rutenett y', 10, 200, int(tickx_space), 10)
-        fargeplot(df_plot, rutenettx, rutenetty, farge, aspect)
-
     else:
         df_plot = terrengprofil(df)
-        ticky_space = int(round(df_plot['Z'].max()/10, -1))
-        print(ticky_space)
-        tickx_space = int(round(df_plot['M'].max()/10, -1))
-        print(tickx_space)
-        rutenetty = st.sidebar.slider('Avstand rutenett y', 10, 200, ticky_space, 10)
-        rutenettx = st.sidebar.slider('Avstand rutenett y', 10, 200, tickx_space, 10)
-        fargeplot(df_plot, rutenettx, rutenetty, farge, aspect)
-        
 
+        
+    fargeplot(df_plot, rutenettx, rutenetty, farge, aspect, tiltak, tiltak_plassering, femtenlinje, meterverdi, retning, justering, tegnforklaring)
 
 
 #TODO: 1:15 linje, mot venstre høgre, plassering, justering z.
+# fargeplot(df, rutenettx, rutenetty, farger='Snøskred', aspect=1, tiltak=False, tiltak_plassering=None, meterverdi=0, retning='mot_origo', justering=0):
