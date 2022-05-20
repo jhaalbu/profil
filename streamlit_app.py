@@ -98,8 +98,6 @@ def fargeplot(df, rutenettx, rutenetty, farger='Snøskred', aspect=1, tiltak=Fal
 
     #ticky_space = round(df['Z'].max()/10, -1)
     #tickx_space = round(df['M'].max()/10, -1)
-    print(f"df z max {df['Z'].max()}")
-    print(f"rutenett y {rutenetty}")
     ax.set_yticks(np.arange(0,df['Z'].max(),rutenetty))
     ax.set_xticks(np.arange(0,df['M'].max(),rutenettx))
     ax.grid(linestyle = '--', linewidth = 0.5)
@@ -175,7 +173,7 @@ if uploaded_file is not None:
     farge = st.sidebar.radio(
      "Kva fargar skal vises?",
      ('Snøskred', 'Jordskred', 'Stabilitet'))
-    aspect = st.sidebar.slider('Kva vertikalskala vil du ha??', 1, 5, 1)
+    aspect = st.sidebar.slider('Endre vertikalskala', 1, 5, 1)
     ticky_space = round(df['Z'].max()/10, -1)
     if ticky_space == 0:
         ticky_space = 5
