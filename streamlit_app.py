@@ -1,3 +1,15 @@
+"""Streamlit profilvisning
+
+Script, laget som ein webapp med Streamlit.
+Leser inn CSV filer, henta inn frå Høydedata.no
+Formatet er forventa å vere: X, Y, Z, M
+Dårlig testa på andre oppløsninger enn 1m
+
+TODO: Definere bedre funksjoner i egen modul for
+å kunne bruke videre i f.eks GIS programvare
+"""
+
+
 import streamlit as st
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -11,21 +23,24 @@ import matplotlib.image as image
 
 st.set_page_config(layout="wide")
 
-#st.set_page_config(layout="wide")
+#Laster inn Asplan Viak logo for vannmerke i plot, usikker på valg av logostørrelse..
 with open('logo (Phone).png', 'rb') as file:
     img = image.imread(file)
 
+#FIXME: Blei vel omstendlig funksjon, burde nok bli delt opp i meir handterbar størrelse
 def fargeplot(df, rutenettx, rutenetty, farger='Snøskred', aspect=1, tiltak=False, tiltak_plassering=0, femtenlinje=False, meterverdi=0, retning='Mot venstre', justering=0, legend=True):
-    #xy = (np.random.random((1000, 2)) - 0.5).cumsum(axis=0)
+    """Funksjonen setter opp pyplot og plotter medst.plot()
+    
+    TODO: Berre returne fig og ax fra matplotlib og ta ut st.pyplot() fra funksjonen
+    """
+
     xy = df[['M', 'Z']].to_numpy()
-    #print(df)
-    # Reshape things so that we have a sequence of:
-    # [[(x0,y0),(x1,y1)],[(x0,y0),(x1,y1)],...]
     xy = xy.reshape(-1, 1, 2)
     segments = np.hstack([xy[:-1], xy[1:]])
     femten = ein_paa_femten(df, meterverdi, retning, justering)
     tiltak_punkt = vis_tiltak(df, tiltak_plassering)
 
+    #TODO: Ta ut fargemapping frå funksjonen
     if farger == 'Snøskred':
         cmap = ListedColormap(['grey', 'green', 'yellow', 'orange', 'orangered', 'red', 'darkred'])
         norm = BoundaryNorm([0, 27, 30, 35, 40, 45, 50, 90], cmap.N)
@@ -66,8 +81,7 @@ def fargeplot(df, rutenettx, rutenetty, farger='Snøskred', aspect=1, tiltak=Fal
         ]
     if farger == 'Stabilitet':
         cmap = ListedColormap(['blue','aquamarine' , 'lime', 'green','yellow', 'orange', 'orangered', 'red', 'black']) #8
-        norm = BoundaryNorm([0, 2.9, 3.8, 5.7, 14, 26.6, 33.7, 45, 63.4, 90], cmap.N) #10
-        #1:20, 1:15, 1:10, 1:4, 1:2, 1:1,5, 1:1, 2:1, 3:1 100:1
+        norm = BoundaryNorm([0, 2.9, 3.8, 5.7, 14, 26.6, 33.7, 45, 63.4, 90], cmap.N) 
         legend_elements = [
         Line2D([0], [0], marker='o', color='w', label='< 1:20',
                 markerfacecolor='blue', markersize=15),
@@ -87,30 +101,31 @@ def fargeplot(df, rutenettx, rutenetty, farger='Snøskred', aspect=1, tiltak=Fal
                 markerfacecolor='red', markersize=15)
         ]
 
+    #TODO: Gå vekk fra fastsatt bredde på plot?
     fig, ax = plt.subplots(figsize=(15,10))
     coll = LineCollection(segments, cmap=cmap, norm=norm)
-    #coll = LineCollection(segments, cmap=plt.cm.gist_ncar)
     coll.set_array(df.Vinkel)
     coll.set_linewidth(3)
     fig.figimage(img, 100, 50, alpha=0.25)
     ax.add_collection(coll)
     ax.autoscale_view()
 
-    #ticky_space = round(df['Z'].max()/10, -1)
-    #tickx_space = round(df['M'].max()/10, -1)
+    #Lar bruker justere inn avstand mellom rutenettet
     ax.set_yticks(np.arange(0,df['Z'].max(),rutenetty))
     ax.set_xticks(np.arange(0,df['M'].max(),rutenettx))
     ax.grid(linestyle = '--', linewidth = 0.5)
 
+    #TODO: Ta inn brukerstyrt labeling?
     ax.set_ylabel('Høyde (moh.)')
     ax.set_xlabel(f'Lengde (m) | Høgdeforhold: {aspect}:1')
     ax.set_aspect(aspect, 'box')
+
+    #Brukes til å styre presentasjon av plotting
     høgdeforskjell = df['Z'].max() - df['Z'].min()
     ax.set_ylim(df['Z'].min() - høgdeforskjell/10, df['Z'].max() + høgdeforskjell/10)
+
     if tiltak:
         ax.scatter(tiltak_punkt[0], tiltak_punkt[1], marker='x', s=200, color='black', linewidths=3, zorder=10)
-        #sirkel = plt.Circle((tiltak_punkt[0], tiltak_punkt[1]), 0.1)
-        #ax.add_artist( sirkel )
     if femtenlinje:
         ax.plot(femten[0], femten[1], color='green', label='1:15')
     if legend:
@@ -119,6 +134,7 @@ def fargeplot(df, rutenettx, rutenetty, farger='Snøskred', aspect=1, tiltak=Fal
     return
 
 def vis_tiltak(df, meterverdi):
+    """Henter ut M og Z verdi for plotting basert på M verdi"""
     radnr = df['M'].sub(meterverdi).abs().idxmin()
     M = float(df.iloc[radnr]['M'])
     Z = float(df.iloc[radnr]['Z'])
@@ -126,6 +142,11 @@ def vis_tiltak(df, meterverdi):
 
 
 def ein_paa_femten(df, meterverdi, retning='Mot venstre', justering=0):
+    """Lager lister (x verier, og y verdier) for 1:15 linje
+    
+    Tar utganspunkt i eit startpunkt, meterverdi, og retning
+    Justering brukes for å senke startpunkt for linje under terreng
+    """
     radnr = df['M'].sub(meterverdi).abs().idxmin()
     M = float(df.iloc[radnr]['M'])
     Z = float(df.iloc[radnr]['Z']) - justering
@@ -144,21 +165,32 @@ def ein_paa_femten(df, meterverdi, retning='Mot venstre', justering=0):
     return liste_x, liste_y
  
 def terrengprofil(df, utjamning=False, opplosning=None):
+    """Tar inn ein dataframe og regner ut hellinger og vinkler
+
+    Dataframe må ha formatet, X, Y, Z, M
+    Utjamning kan settes til True, men da må også oppløsning gis
+    Denne 
+    """
     if utjamning == True:
         df = df.groupby(np.arange(len(df))//opplosning).mean()
+    
+    #Rekner ut hellinger, litt uelegant utanfor pandas, men funker..
     z = df['Z'].tolist()
     m = df['M'].tolist()
     h = []
-    #Rekner ut hellinger, litt uelegant utanfor pandas, men funker..
+    
     for i in range(len(z)):
         h.append((z[i] - z[i -1])/(m[i] - m[i - 1])) 
+
     df['Helning'] = h
     df['Vinkel'] = abs(np.degrees(np.arctan(df['Helning'])))
+
     return df
 
 st.header('Profilverktøy')
 st.write('Leser csv filer fra profilverktøyet på Høydedata.no')
 
+#FIXME: Eskalerte etter kvart, legge inn i ein main() funksjon?
 uploaded_file = st.file_uploader("Choose a file")
 tiltak = False
 tiltak_plassering = 0
@@ -166,20 +198,24 @@ meterverdi = 0
 retning = "Mot høgre"
 justering = 0
 femtenlinje = False
+
 if uploaded_file is not None:
 
-     # Can be used wherever a "file-like" object is accepted:
     df = pd.read_csv(uploaded_file, sep=';')
+
     farge = st.sidebar.radio(
      "Kva fargar skal vises?",
      ('Snøskred', 'Jordskred', 'Stabilitet'))
+
     aspect = st.sidebar.slider('Endre vertikalskala', 1, 5, 1)
+
     ticky_space = round(df['Z'].max()/10, -1)
     if ticky_space == 0:
         ticky_space = 5
     tickx_space = round(df['M'].max()/10, -1)
     if tickx_space == 0:
         tickx_space = 1
+    
     høgdeforskjell = df['Z'].max() - df['Z'].min()
     rutenetty = st.sidebar.slider('Avstand rutenett y', 5, 100, int(ticky_space), 5)
     rutenettx = st.sidebar.slider('Avstand rutenett x', 10, 100, int(tickx_space), 10)
@@ -194,9 +230,11 @@ if uploaded_file is not None:
                 
             justering = st.sidebar.number_input("Gi justering for line (0.25 x H)", 0)
             retning = st.sidebar.radio('Kva retning skal linje plottes?', ("Mot høgre", "Mot venstre"))
+
     tiltak = st.sidebar.checkbox("Vis tiltak")
     if tiltak:
         tiltak_plassering = st.sidebar.number_input("Gi plassering for tiltak", 0)
+        
     check = st.sidebar.checkbox("Jamn ut profil")
     tegnforklaring = st.sidebar.checkbox("Vis tegnforklaring", True)
     if check:
@@ -209,5 +247,3 @@ if uploaded_file is not None:
     fargeplot(df_plot, rutenettx, rutenetty, farge, aspect, tiltak, tiltak_plassering, femtenlinje, meterverdi, retning, justering, tegnforklaring)
 
 
-#TODO: 1:15 linje, mot venstre høgre, plassering, justering z.
-# fargeplot(df, rutenettx, rutenetty, farger='Snøskred', aspect=1, tiltak=False, tiltak_plassering=None, meterverdi=0, retning='mot_origo', justering=0):
