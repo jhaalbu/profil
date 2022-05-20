@@ -98,21 +98,25 @@ def fargeplot(df, rutenettx, rutenetty, farger='Snøskred', aspect=1, tiltak=Fal
 
     #ticky_space = round(df['Z'].max()/10, -1)
     #tickx_space = round(df['M'].max()/10, -1)
+    print(f"df z max {df['Z'].max()}")
+    print(f"rutenett y {rutenetty}")
     ax.set_yticks(np.arange(0,df['Z'].max(),rutenetty))
     ax.set_xticks(np.arange(0,df['M'].max(),rutenettx))
     ax.grid(linestyle = '--', linewidth = 0.5)
-    if legend:
-        ax.legend(handles=legend_elements, title='Helling')
+
     ax.set_ylabel('Høyde (moh.)')
-    ax.set_xlabel('Lengde (m)')
+    ax.set_xlabel(f'Lengde (m) | Høgdeforhold: {aspect}:1')
     ax.set_aspect(aspect, 'box')
-    ax.set_ylim(df['Z'].min() - 20, df['Z'].max() + 20)
+    høgdeforskjell = df['Z'].max() - df['Z'].min()
+    ax.set_ylim(df['Z'].min() - høgdeforskjell/10, df['Z'].max() + høgdeforskjell/10)
     if tiltak:
         ax.scatter(tiltak_punkt[0], tiltak_punkt[1], marker='x', s=200, color='black', linewidths=3, zorder=10)
         #sirkel = plt.Circle((tiltak_punkt[0], tiltak_punkt[1]), 0.1)
         #ax.add_artist( sirkel )
     if femtenlinje:
-        ax.plot(femten[0], femten[1], color='green')
+        ax.plot(femten[0], femten[1], color='green', label='1:15')
+    if legend:
+        ax.legend(handles=legend_elements, title='Helling')
     st.pyplot(fig)
     return
 
@@ -173,9 +177,15 @@ if uploaded_file is not None:
      ('Snøskred', 'Jordskred', 'Stabilitet'))
     aspect = st.sidebar.slider('Kva vertikalskala vil du ha??', 1, 5, 1)
     ticky_space = round(df['Z'].max()/10, -1)
+    if ticky_space == 0:
+        ticky_space = 5
     tickx_space = round(df['M'].max()/10, -1)
-    rutenetty = st.sidebar.slider('Avstand rutenett y', 10, 200, int(ticky_space), 10)
-    rutenettx = st.sidebar.slider('Avstand rutenett y', 10, 200, int(tickx_space), 10)
+    if tickx_space == 0:
+        tickx_space = 1
+    høgdeforskjell = df['Z'].max() - df['Z'].min()
+    rutenetty = st.sidebar.slider('Avstand rutenett y', 5, 100, int(ticky_space), 5)
+    rutenettx = st.sidebar.slider('Avstand rutenett x', 10, 100, int(tickx_space), 10)
+    
     if farge == 'Stabilitet':
         femtenlinje = st.sidebar.checkbox("Vis linje for potensielt løsneområde")
         if femtenlinje:
