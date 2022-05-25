@@ -28,7 +28,7 @@ with open('logo (Phone).png', 'rb') as file:
     img = image.imread(file)
 
 #FIXME: Blei vel omstendlig funksjon, burde nok bli delt opp i meir handterbar størrelse
-def fargeplot(df, rutenettx, rutenetty, farger='Snøskred', aspect=1, tiltak=False, tiltak_plassering=0, femtenlinje=False, meterverdi=0, retning='Mot venstre', justering=0, legend=True):
+def fargeplot(df, rutenettx, rutenetty, farger='Snøskred', aspect=1, tiltak=False, tiltak_plassering=0, femtenlinje=False, linjeverdi=1/15, meterverdi=0, retning='Mot venstre', justering=0, legend=True):
     """Funksjonen setter opp pyplot og plotter medst.plot()
     
     TODO: Berre returne fig og ax fra matplotlib og ta ut st.pyplot() fra funksjonen
@@ -37,7 +37,7 @@ def fargeplot(df, rutenettx, rutenetty, farger='Snøskred', aspect=1, tiltak=Fal
     xy = df[['M', 'Z']].to_numpy()
     xy = xy.reshape(-1, 1, 2)
     segments = np.hstack([xy[:-1], xy[1:]])
-    femten = ein_paa_femten(df, meterverdi, retning, justering)
+    femten = ein_paa_femten(df, meterverdi, linjeverdi, retning, justering)
     tiltak_punkt = vis_tiltak(df, tiltak_plassering)
 
     #TODO: Ta ut fargemapping frå funksjonen
@@ -141,7 +141,7 @@ def vis_tiltak(df, meterverdi):
     return M, Z
 
 
-def ein_paa_femten(df, meterverdi, retning='Mot venstre', justering=0):
+def ein_paa_femten(df, meterverdi, linjeverdi=1/15, retning='Mot venstre', justering=0):
     """Lager lister (x verier, og y verdier) for 1:15 linje
     
     Tar utganspunkt i eit startpunkt, meterverdi, og retning
@@ -157,10 +157,10 @@ def ein_paa_femten(df, meterverdi, retning='Mot venstre', justering=0):
     liste_y.append(Z)
     if retning == 'Mot venstre':
         liste_x.append(0)
-        liste_y.append(Z + M*(1/15))
+        liste_y.append(Z + M*(linjeverdi))
     if retning == 'Mot høgre':
         liste_x.append(M_max)
-        liste_y.append(Z + (M_max-M)*(1/15))
+        liste_y.append(Z + (M_max-M)*(linjeverdi))
     
     return liste_x, liste_y
  
@@ -198,6 +198,7 @@ meterverdi = 0
 retning = "Mot høgre"
 justering = 0
 femtenlinje = False
+linjeverdi = 1/15
 
 if uploaded_file is not None:
 
@@ -229,9 +230,14 @@ if uploaded_file is not None:
                 meterverdi == df['M'].max() - 100
                 
             justering = st.sidebar.number_input("Gi justering for line (0.25 x H)", 0)
+            #linjeverdi = st.sidebar.slider("Gi helling for linje", 1/20, 1/1, 1/15, 0.01)
+            linjeverdi = st.sidebar.number_input("Gi helling for linje",0.0, 1.0, 1/15, 0.01)
+            st.sidebar.write(f'Forholdtall - 1/{round(1/linjeverdi)}')
+            st.sidebar.write(f'Vinkel - {round(abs(np.degrees(np.arctan(linjeverdi))))}\N{DEGREE SIGN}')
+
             retning = st.sidebar.radio('Kva retning skal linje plottes?', ("Mot høgre", "Mot venstre"))
 
-    tiltak = st.sidebar.checkbox("Vis tiltak")
+    tiltak = st.sidebar.checkbox("Vis tiltak")  
     if tiltak:
         tiltak_plassering = st.sidebar.number_input("Gi plassering for tiltak", 0)
         
@@ -244,6 +250,6 @@ if uploaded_file is not None:
         df_plot = terrengprofil(df)
 
         
-    fargeplot(df_plot, rutenettx, rutenetty, farge, aspect, tiltak, tiltak_plassering, femtenlinje, meterverdi, retning, justering, tegnforklaring)
+    fargeplot(df_plot, rutenettx, rutenetty, farge, aspect, tiltak, tiltak_plassering, femtenlinje, linjeverdi, meterverdi, retning, justering, tegnforklaring)
 
 
