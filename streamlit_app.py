@@ -187,6 +187,13 @@ def terrengprofil(df, utjamning=False, opplosning=None):
 
     return df
 
+def csv_bearbeiding(fil):
+    '''Fikser fil med høydatada.no som levere både DTM og DOM'''
+    df = pd.read_csv(uploaded_file, sep=';', skiprows=1)
+    df = df.loc[: df[(df['X'] == 'Source: DOM1')].index[0] - 1, :]
+    df = df.astype('float64')
+    return df
+
 st.header('Profilverktøy')
 st.write('Leser csv filer fra profilverktøyet på Høydedata.no')
 
@@ -202,8 +209,8 @@ linjeverdi = 1/15
 
 if uploaded_file is not None:
 
-    df = pd.read_csv(uploaded_file, sep=';')
-
+    df = csv_bearbeiding(uploaded_file)
+    
     farge = st.sidebar.radio(
      "Kva fargar skal vises?",
      ('Snøskred', 'Jordskred', 'Stabilitet'))
