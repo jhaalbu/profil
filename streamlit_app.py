@@ -24,8 +24,8 @@ import matplotlib.image as image
 st.set_page_config(layout="wide")
 
 #Laster inn Asplan Viak logo for vannmerke i plot, usikker på valg av logostørrelse..
-with open('logo (Phone).png', 'rb') as file:
-    img = image.imread(file)
+# with open('logo (Phone).png', 'rb') as file:
+#     img = image.imread(file)
 
 #FIXME: Blei vel omstendlig funksjon, burde nok bli delt opp i meir handterbar størrelse
 def fargeplot(df, rutenettx, rutenetty, farger='Snøskred', aspect=1, tiltak=False, tiltak_plassering=0, femtenlinje=False, linjeverdi=1/15, meterverdi=0, retning='Mot venstre', justering=0, legend=True):
@@ -106,7 +106,7 @@ def fargeplot(df, rutenettx, rutenetty, farger='Snøskred', aspect=1, tiltak=Fal
     coll = LineCollection(segments, cmap=cmap, norm=norm)
     coll.set_array(df.Vinkel)
     coll.set_linewidth(3)
-    fig.figimage(img, 100, 50, alpha=0.25)
+    #fig.figimage(img, 100, 50, alpha=0.25)
     ax.add_collection(coll)
     ax.autoscale_view()
 
