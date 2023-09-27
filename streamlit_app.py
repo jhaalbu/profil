@@ -35,10 +35,15 @@ def fargeplot(df, rutenettx, rutenetty, farger='Snøskred', aspect=1, tiltak=Fal
     """
 
     xy = df[['M', 'Z']].to_numpy()
-    xy = xy.reshape(-1, 1, 2)
-    segments = np.hstack([xy[:-1], xy[1:]])
+    #xy = xy.reshape(-1, 1, 2)
+    segments = np.array([xy[:-1], xy[1:]]).transpose(1,0,2) 
+    #segments = np.hstack([xy[:-1], xy[1:]])
     femten = ein_paa_femten(df, meterverdi, linjeverdi, retning, justering)
     tiltak_punkt = vis_tiltak(df, tiltak_plassering)
+
+    dZ = df['Z'].diff().values[1:]  # difference in Z for each segment
+    dM = df['M'].diff().values[1:]  # difference in M for each segment
+    slopes = np.degrees(np.arctan(dZ / dM))
 
     #TODO: Ta ut fargemapping frå funksjonen
     if farger == 'Snøskred':
@@ -103,8 +108,10 @@ def fargeplot(df, rutenettx, rutenetty, farger='Snøskred', aspect=1, tiltak=Fal
 
     #TODO: Gå vekk fra fastsatt bredde på plot?
     fig, ax = plt.subplots(figsize=(15,10))
+    
     coll = LineCollection(segments, cmap=cmap, norm=norm)
-    coll.set_array(df.Vinkel)
+    coll.set_array(slopes) 
+    #coll.set_array(df.Vinkel)
     coll.set_linewidth(3)
     #fig.figimage(img, 100, 50, alpha=0.25)
     ax.add_collection(coll)
