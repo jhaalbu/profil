@@ -43,7 +43,7 @@ def fargeplot(df, rutenettx, rutenetty, farger='Snøskred', aspect=1, tiltak=Fal
 
     dZ = df['Z'].diff().values[1:]  # difference in Z for each segment
     dM = df['M'].diff().values[1:]  # difference in M for each segment
-    slopes = np.degrees(np.arctan(dZ / dM))
+    slopes = abs(np.degrees(np.arctan(dZ / dM)))
 
     #TODO: Ta ut fargemapping frå funksjonen
     if farger == 'Snøskred':
